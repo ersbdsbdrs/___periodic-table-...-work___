@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Периодическая таблица</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #14161a;
+    color: #e7e9ee;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+  }
+  main {
+    width: 100%;
+    max-width: 720px;
+    background: #1c1f26;
+    border: 1px solid #2a2e37;
+    border-radius: 14px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  h1 { margin: 0 0 .25rem; font-size: 1.4rem; letter-spacing: .02em; }
+  .sub { margin: 0 0 1.75rem; color: #8b919e; font-size: .9rem; }
+  button {
+    font: inherit;
+    width: 100%;
+    padding: .85rem 1rem;
+    margin-bottom: .6rem;
+    background: #23272f;
+    color: #e7e9ee;
+    border: 1px solid #333844;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .15s, background .15s;
+  }
+  button:hover { background: #2a2f38; border-color: #4b5261; }
+  button.secondary { width: auto; padding: .5rem .9rem; margin: 0 0 1rem; font-size: .85rem; }
+  pre {
+    background: #101216;
+    border: 1px solid #262a33;
+    border-radius: 10px;
+    padding: 1rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: #c8cdd6;
+    max-height: 45vh;
+    overflow: auto;
+  }
+  input {
+    font: inherit;
+    padding: .7rem .9rem;
+    background: #101216;
+    border: 1px solid #333844;
+    border-radius: 10px;
+    color: #e7e9ee;
+    width: 160px;
+    margin-right: .5rem;
+  }
+  input:focus { outline: none; border-color: #4b5261; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Периодическая таблица</h1>
+  <p class="sub">Python + Flask · 1 = квест · 2 = элемент дня · 3 = поиск</p>
+
+  <section id="menu">
+    <button id="btn-quiz">1 — Квест по элементам</button>
+    <button id="btn-daily">2 — Текущий дневной элемент</button>
+    <button id="btn-finder">3 — Поиск по атомному числу</button>
+  </section>
+
+  <section id="quiz" hidden>
+    <button class="secondary" data-back>← Назад</button>
+    <pre id="quiz-out"></pre>
+
+    <!-- Вот наша новая форма для ввода ответа -->
+    <form id="quiz-form" hidden style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+      <input id="quiz-input" type="text" placeholder="Атомный номер или ответ" required style="margin: 0; flex: 1; width: 100%;">
+      <button type="submit" style="margin: 0; width: auto; padding: 0.7rem 1.5rem; text-align: center;">OK</button>
+    </form>
+  </section>
+
+  <section id="daily" hidden>
+    <button class="secondary" data-back>← Назад</button>
+    <pre id="daily-out"></pre>
+  </section>
+
+  <section id="finder" hidden>
+    <button class="secondary" data-back>← Назад</button>
+    <form id="finder-form">
+      <input id="finder-input" type="number" min="1" placeholder="Атомный номер" required>
+      <button type="submit" style="width:auto;display:inline-block;">Искать</button>
+    </form>
+    <pre id="finder-out"></pre>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const views = { menu: $('#menu'), quiz: $('#quiz'), daily: $('#daily'), finder: $('#finder') };
+
+function show(name) {
+  for (const v of Object.values(views)) v.hidden = true;
+  views[name].hidden = false;
+}
+
+async function getJSON(path) {
+  const r = await fetch('/api' + path);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => show('menu'));
+
+$('#btn-quiz').onclick = async () => {
+  show('quiz');
+  const out = $('#quiz-out');
+  const form = $('#quiz-form');
+  const input = $('#quiz-input');
+
+  // Прячем форму и показываем загрузку
+  form.hidden = true;
+  out.textContent = 'Начинаю квест...';
+
+  try {
+    const [quiz, elements] = await Promise.all([getJSON('/quiz'), getJSON('/elements')]);
+    let text = '';
+    if (quiz.question === 'Which element am I?' && quiz.clues) {
+      text += 'Подсказки: ' + quiz.clues.join(', ') + '\n\n';
+    }
+
+    // Вытаскиваем названия или символы из объектов
+    const formattedChoices = quiz.choices.map(choice => {
+      if (typeof choice === 'object' && choice !== null) {
+        // Пытаемся взять name, потом symbol, или просто выводим как есть
+        return choice.name || choice.symbol || JSON.stringify(choice);
+      }
+      return choice;
+    });
+
+    text += quiz.question + '\n' + formattedChoices.join(' / ');
+    out.textContent = text;
+
+    const match = elements.find(el => el.atomic_number === quiz.answer);
+
+    // А теперь показываем форму и ставим фокус в поле
+    form.hidden = false;
+    input.value = '';
+    input.focus();
+
+    // Обработчик ответа
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const val = input.value;
+      let correct = false;
+      let resultText = '';
+
+      if (match) {
+        const guess = parseInt(val, 10);
+        correct = guess === quiz.answer;
+        resultText = correct
+          ? `\n\n✅ Победил! Это ${match.name} (${match.symbol}, ${match.atomic_number})`
+          : `\n\n❌ Неверно. Правильный ответ: ${quiz.answer}`;
+      } else {
+        correct = val === quiz.answer;
+        resultText = correct
+          ? '\n\n✅ Победил!'
+          : `\n\n❌ Неверно. Правильный ответ: ${quiz.answer}`;
+      }
+
+      out.textContent += resultText;
+      form.hidden = true;
+    };
+
+  } catch (e) {
+    out.textContent = 'Ошибка: ' + e.message;
+  }
+};
+
+$('#btn-daily').onclick = async () => {
+  show('daily');
+  const out = $('#daily-out');
+  out.textContent = 'Попытка вывести элемент...';
+  try {
+    const el = await getJSON('/daily');
+    out.textContent = `${el.name} (${el.symbol}) — №${el.atomic_number}\nДень текущего элемента: ${el.date}`;
+  } catch (e) {
+    out.textContent = 'Ошибка: ' + e.message;
+  }
+};
+
+$('#btn-finder').onclick = () => { show('finder'); $('#finder-out').textContent = ''; };
+
+$('#finder-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const n = parseInt($('#finder-input').value, 10);
+  const out = $('#finder-out');
+  out.textContent = 'Ищу...';
+  try {
+    const el = await getJSON('/element/' + n);
+    out.textContent = JSON.stringify(el, null, 2);
+  } catch {
+    out.textContent = 'Не найдено — попробуйте другой номер.';
+  }
+};
+</script>
+</body>
+</html>
