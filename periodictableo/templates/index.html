@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Периодическая таблица</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="cursor-glow"></div>
+
+<div class="app-wrapper">
+  <main>
+    <h1>Периодическая таблица</h1>
+
+    <section id="menu">
+      <button id="btn-quiz">1 — Квест по элементам</button>
+      <button id="btn-daily">2 — Текущий дневной элемент</button>
+      <button id="btn-finder">3 — Поиск по элементу</button>
+      <button id="btn-random">4 — Случайный элемент</button>
+    </section>
+
+    <section id="quiz" hidden>
+      <button class="secondary" data-back>← Назад</button>
+      <div id="quiz-timer" style="margin-bottom: 1rem; font-weight: bold; font-size: 0.9rem; color: #00e5ff; letter-spacing: 0.05em; display: flex; justify-content: space-between;">
+        <span id="timer-text">⏱️ 15с</span>
+        <span id="score-text">🏆 Рекорд: 0</span>
+      </div>
+      <pre id="quiz-out"></pre>
+      <form id="quiz-form" hidden style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <input id="quiz-input" type="number" min="1" max="4" placeholder="Номер ответа (1–4)" required style="margin: 0; flex: 1; width: 100%;">
+        <button type="submit" style="margin: 0; width: auto; padding: 0.7rem 1.5rem; text-align: center;">OK</button>
+      </form>
+      <button class="secondary" id="quiz-next" hidden style="margin-top: 1rem;">Ещё вопрос →</button>
+    </section>
+
+    <section id="daily" hidden>
+      <button class="secondary" data-back>← Назад</button>
+      <button class="secondary" id="btn-save-fav-daily">⭐ Сохранить</button>
+      <button class="secondary" id="btn-toggle-summary-daily">📖 Описание</button>
+      <pre id="daily-out"></pre>
+    </section>
+
+    <section id="finder" hidden>
+      <button class="secondary" data-back>← Назад</button>
+      <button class="secondary" id="btn-save-fav-finder">⭐ Сохранить</button>
+      <button class="secondary" id="btn-toggle-summary-finder">📖 Описание</button>
+      <form id="finder-form" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <select id="finder-type" style="padding: .7rem .9rem; background: #0b0f13; color: #e7e9ee; border: 1px solid #263440; border-radius: 10px; font: inherit; outline: none;">
+          <option value="number">По номеру</option>
+          <option value="name">По названию</option>
+          <option value="symbol">По символу</option>
+        </select>
+        <input id="finder-input" type="text" placeholder="Введите запрос..." required style="margin: 0; flex: 1; min-width: 150px;">
+        <button type="submit" style="width:auto; margin: 0; padding: 0.7rem 1.5rem;">Искать</button>
+      </form>
+      <pre id="finder-out"></pre>
+    </section>
+
+    <section id="random" hidden>
+      <button class="secondary" data-back>← Назад</button>
+      <button class="secondary" id="btn-save-fav-random">⭐ Сохранить</button>
+      <button class="secondary" id="btn-toggle-summary-random">📖 Описание</button>
+
+      <div style="margin-bottom: 1rem;">
+        <select id="random-category" style="padding: .7rem .9rem; background: #0b0f13; color: #e7e9ee; border: 1px solid #263440; border-radius: 10px; font: inherit; outline: none; width: 100%; margin-bottom: 0.5rem;">
+          <option value="all">Все элементы</option>
+          <option value="Transition Metal">Переходные металлы</option>
+          <option value="Alkali Metal">Щелочные металлы</option>
+          <option value="Alkaline Earth Metal">Щелочноземельные металлы</option>
+          <option value="Noble Gas">Благородные газы</option>
+          <option value="Halogen">Галогены</option>
+          <option value="Metalloid">Металлоиды</option>
+          <option value="Nonmetal">Неметаллы</option>
+        </select>
+        <button id="btn-roll-random" style="width: 100%; margin: 0;">Крутить рулетку 🎲</button>
+      </div>
+      <pre id="random-out"></pre>
+    </section>
+  </main>
+
+  <aside class="sidebar">
+    <h2 style="margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid #1e2b36; padding-bottom: 0.5rem;">⭐ Избранное</h2>
+    <ul id="favorites-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+    <button class="secondary" id="btn-clear-favs" style="width: 100%; text-align: center; color: #ff4d4d; border-color: #ff4d4d; margin-top: 1rem; padding: 0.5rem;">Очистить всё 🗑️</button>
+  </aside>
+</div>
+
+<div id="api-limit" class="api-counter" style="left: 1rem;">Локальные запросы: 0</div>
+<div id="api-external" class="api-counter" style="right: 1rem;">Запросы к API: 0</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
