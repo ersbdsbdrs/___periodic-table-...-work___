@@ -85,11 +85,12 @@
     <button class="secondary" data-back>← Назад</button>
     <pre id="quiz-out"></pre>
 
-    <!-- Вот наша новая форма для ввода ответа -->
     <form id="quiz-form" hidden style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-      <input id="quiz-input" type="text" placeholder="Атомный номер или ответ" required style="margin: 0; flex: 1; width: 100%;">
-      <button type="submit" style="margin: 0; width: auto; padding: 0.7rem 1.5rem; text-align: center;">OK</button>
+
+      <input id="quiz-input" type="number" min="1" max="4" placeholder="Номер ответа (1–4)" required style="margin: 0; flex: 1; width: 100%;">      <button type="submit" style="margin: 0; width: auto; padding: 0.7rem 1.5rem; text-align: center;">OK</button>
     </form>
+
+    <button class="secondary" id="quiz-next" hidden style="margin-top: 1rem;">Ещё вопрос →</button>
   </section>
 
   <section id="daily" hidden>
@@ -109,7 +110,143 @@
 
 <script>
 const $ = s => document.querySelector(s);
+const categoryRU = {
+  "Alkaline Earth Metal": "Щелочноземельный металл",
+  "Alkali Metal": "Щелочной металл",
+  "Post-Transition Metal": "Постпереходный металл",
+  "Transition Metal": "Переходный металл",
+  "Lanthanide": "Лантаноид",
+  "Actinide": "Актиноид",
+  "Noble Gas": "Благородный газ",
+  "Halogen": "Галоген",
+  "Metalloid": "Металлоид",
+  "Nonmetal": "Неметалл",
+  "Reactive Nonmetal": "Реактивный неметалл",
+  "lanthanide": "Лантаноид",
+  "actinide": "Актиноид"
+};
+
+const elementRU = {
+  "Hydrogen": "Водород", "Helium": "Гелий", "Lithium": "Литий", "Beryllium": "Бериллий",
+  "Boron": "Бор", "Carbon": "Углерод", "Nitrogen": "Азот", "Oxygen": "Кислород",
+  "Fluorine": "Фтор", "Neon": "Неон", "Sodium": "Натрий", "Magnesium": "Магний",
+  "Aluminium": "Алюминий", "Silicon": "Кремний", "Phosphorus": "Фосфор", "Sulfur": "Сера",
+  "Chlorine": "Хлор", "Argon": "Аргон", "Potassium": "Калий", "Calcium": "Кальций",
+  "Scandium": "Скандий", "Titanium": "Титан", "Vanadium": "Ванадий", "Chromium": "Хром",
+  "Manganese": "Марганец", "Iron": "Железо", "Cobalt": "Кобальт", "Nickel": "Никель",
+  "Copper": "Медь", "Zinc": "Цинк", "Gallium": "Галлий", "Germanium": "Германий",
+  "Arsenic": "Мышьяк", "Selenium": "Селен", "Bromine": "Бром", "Krypton": "Криптон",
+  "Rubidium": "Рубидий", "Strontium": "Стронций", "Yttrium": "Иттрий", "Zirconium": "Цирконий",
+  "Niobium": "Ниобий", "Molybdenum": "Молибден", "Technetium": "Технеций", "Ruthenium": "Рутений",
+  "Rhodium": "Родий", "Palladium": "Палладий", "Silver": "Серебро", "Cadmium": "Кадмий",
+  "Indium": "Индий", "Tin": "Олово", "Antimony": "Сурьма", "Tellurium": "Теллур",
+  "Iodine": "Иод", "Xenon": "Ксенон", "Cesium": "Цезий", "Barium": "Барий",
+  "Lanthanum": "Лантан", "Cerium": "Церий", "Praseodymium": "Празеодим", "Neodymium": "Неодим",
+  "Promethium": "Прометий", "Samarium": "Самарий", "Europium": "Европий", "Gadolinium": "Гадолиний",
+  "Terbium": "Тербий", "Dysprosium": "Диспрозий", "Holmium": "Гольмий", "Erbium": "Эрбий",
+  "Thulium": "Тулий", "Ytterbium": "Иттербий", "Lutetium": "Лютеций", "Hafnium": "Гафний",
+  "Tantalum": "Тантал", "Tungsten": "Вольфрам", "Rhenium": "Рений", "Osmium": "Осмий",
+  "Iridium": "Иридий", "Platinum": "Платина", "Gold": "Золото", "Mercury": "Ртуть",
+  "Thallium": "Таллий", "Lead": "Свинец", "Bismuth": "Висмут", "Polonium": "Полоний",
+  "Astatine": "Астат", "Radon": "Радон", "Francium": "Франций", "Radium": "Радий",
+  "Actinium": "Актиний", "Thorium": "Торий", "Protactinium": "Протактиний", "Uranium": "Уран",
+  "Neptunium": "Нептуний", "Plutonium": "Плутоний", "Americium": "Америций", "Curium": "Кюрий",
+  "Berkelium": "Берклий", "Californium": "Калифорний", "Einsteinium": "Эйнштейний", "Fermium": "Фермий",
+  "Mendelevium": "Менделевий", "Nobelium": "Нобелий", "Lawrencium": "Лоуренсий", "Rutherfordium": "Резерфордий",
+  "Dubnium": "Дубний", "Seaborgium": "Сиборгий", "Bohrium": "Борий", "Hassium": "Хассий",
+  "Meitnerium": "Мейтнерий", "Darmstadtium": "Дармштадтий", "Roentgenium": "Рентгений", "Copernicium": "Коперниций",
+  "Nihonium": "Нихоний", "Flerovium": "Флеровий", "Moscovium": "Московий", "Livermorium": "Ливерморий",
+  "Tennessine": "Теннессин", "Oganesson": "Оганесон"
+};
+
+const cluesRU = {
+  "At room temperature, I am a": "При комнатной температуре я —",
+  "I am in the": "Я нахожусь в",
+  "period": "периоде",
+  "group": "группе",
+  "block.": "блоке.",
+  "My density is": "Моя плотность —",
+  "My melting point is": "Моя температура плавления —",
+  "My boiling point is": "Моя температура кипения —",
+  "My electronegativity is": "Моя электроотрицательность —",
+  "g/cm³.": "г/см³.",
+  "K.": "K.",
+  "Solid.": "Твёрдое.",
+  "Liquid.": "Жидкое.",
+  "Gas.": "Газообразное."
+};
+
+function translateText(text) {
+  if (!text) return text;
+  let q = text;
+
+  if (categoryRU[q]) return categoryRU[q];
+  if (categoryRU[q.trim()]) return categoryRU[q.trim()];
+
+  if (q === "Which element am I?") {
+    q = "Какой это элемент?";
+  } else if (q.startsWith("What category does")) {
+    const el = q.replace("What category does ", "").replace(" belong to?", "");
+    q = `К какой категории относится ${translateElements(el)}?`;
+  } else if (q.startsWith("What is the atomic number of")) {
+    const el = q.replace("What is the atomic number of ", "").replace("?", "");
+    q = `Каков атомный номер у ${translateElements(el)}?`;
+  } else if (q.startsWith("What is the atomic mass of")) {
+    const el = q.replace("What is the atomic mass of ", "").replace("?", "");
+    q = `Какова атомная масса у ${translateElements(el)}?`;
+  } else if (q.startsWith("What is the symbol for")) {
+    const el = q.replace("What is the symbol for ", "").replace("?", "");
+    q = `Каков химический символ у ${translateElements(el)}?`;
+  } else if (q.startsWith("What element has the symbol")) {
+    const sym = q.replace("What element has the symbol ", "").replace("?", "");
+    q = `У какого элемента символ ${sym}?`;
+  } else if (q.startsWith("What element has atomic number")) {
+    const num = q.replace("What element has atomic number ", "").replace("?", "");
+    q = `У какого элемента атомный номер ${num}?`;
+  } else {
+    q = translateElements(q);
+  }
+
+  return q;
+}
+
+
+
+function translateElements(text) {
+  let res = text;
+  for (const [en, ru] of Object.entries(elementRU)) {
+    res = res.replace(new RegExp(`\\b${en}\\b`, 'g'), ru);
+  }
+  return res;
+}
 const views = { menu: $('#menu'), quiz: $('#quiz'), daily: $('#daily'), finder: $('#finder') };
+
+function translateClue(clue) {
+  let res = clue;
+
+  // Сначала переводим названия элементов
+  res = translateElements(res);
+
+  // Переводим целые предложения по шаблонам (Regex)
+  res = res.replace(/^At room temperature, I am a (.*?)\.$/, (match, state) => {
+    const states = { "Solid": "твёрдое вещество", "Liquid": "жидкость", "Gas": "газ" };
+    return `При комнатной температуре я — ${states[state] || state}`;
+  });
+
+  res = res.replace(/^I am in the (.*?)\.$/, (match, block) => {
+    const blocks = { "s-block": "s-блоке", "p-block": "p-блоке", "d-block": "d-блоке", "f-block": "f-блоке" };
+    return `Я нахожусь в ${blocks[block] || block}`;
+  });
+
+  res = res.replace(/^I am in period (.*?), group (.*?)\.$/, "Я нахожусь в периоде $1, группе $2");
+  res = res.replace(/^My density is (.*?) g\/cm³\.$/, "Моя плотность — $1 г/см³");
+  res = res.replace(/^My melting point is (.*?) K\.$/, "Моя температура плавления — $1 K");
+  res = res.replace(/^My boiling point is (.*?) K\.$/, "Моя температура кипения — $1 K");
+  res = res.replace(/^My electronegativity is (.*?)\.$/, "Моя электроотрицательность — $1");
+
+  // Убираем лишнюю точку в конце, если она осталась
+  return res.replace(/\.$/, '').trim();
+}
 
 function show(name) {
   for (const v of Object.values(views)) v.hidden = true;
@@ -124,78 +261,132 @@ async function getJSON(path) {
 
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => show('menu'));
 
-$('#btn-quiz').onclick = async () => {
-  show('quiz');
+function acceptableAnswers(quiz, elements) {
+  const set = new Set();
+  if (quiz.answer != null) set.add(String(quiz.answer).trim().toLowerCase());
+  const match = elements.find(el =>
+    el.atomic_number === quiz.answer ||
+    String(el.symbol).toLowerCase() === String(quiz.answer).toLowerCase() ||
+    String(el.name).toLowerCase() === String(quiz.answer).toLowerCase()
+  );
+  if (match) {
+    set.add(String(match.atomic_number).toLowerCase());
+    set.add(String(match.symbol).trim().toLowerCase());
+    set.add(String(match.name).trim().toLowerCase());
+  }
+  return { set, match };
+}
+
+function choiceMatches(choice, answers) {
+  if (typeof choice === 'object' && choice !== null) {
+    return ['atomic_number', 'symbol', 'name', 'label', 'value'].some(k =>
+      choice[k] != null && answers.has(String(choice[k]).trim().toLowerCase())
+    );
+  }
+  return answers.has(String(choice).trim().toLowerCase());
+}
+
+function formatChoice(choice) {
+  if (typeof choice === 'object' && choice !== null) {
+    return choice.label || choice.value || choice.name || choice.symbol || JSON.stringify(choice);
+  }
+  return String(choice);
+}
+
+
+async function loadQuiz() {
   const out = $('#quiz-out');
   const form = $('#quiz-form');
   const input = $('#quiz-input');
+  const next = $('#quiz-next');
 
-  // Прячем форму и показываем загрузку
   form.hidden = true;
+  next.hidden = true;
+  input.value = '';
   out.textContent = 'Начинаю квест...';
 
   try {
     const [quiz, elements] = await Promise.all([getJSON('/quiz'), getJSON('/elements')]);
+    quizElements = elements;
+
     let text = '';
-    if (quiz.question === 'Which element am I?' && quiz.clues) {
-      text += 'Подсказки: ' + quiz.clues.join(', ') + '\n\n';
+    if (quiz.question === 'Which element am I?' && Array.isArray(quiz.clues)) {
+      text += 'Подсказки:\n' + quiz.clues.map(c => '• ' + translateClue(c)).join('\n') + '\n\n';
     }
-
-    // Вытаскиваем названия или символы из объектов
-    const formattedChoices = quiz.choices.map(choice => {
-      if (typeof choice === 'object' && choice !== null) {
-        // Пытаемся взять name, потом symbol, или просто выводим как есть
-        return choice.name || choice.symbol || JSON.stringify(choice);
-      }
-      return choice;
-    });
-
-    text += quiz.question + '\n' + formattedChoices.join(' / ');
+    text += translateText(quiz.question) + '\n';
+    if (Array.isArray(quiz.choices)) {
+      text += quiz.choices.map((c, i) => `${i + 1}. ${translateText(formatChoice(c))}`).join('\n');
+    }
     out.textContent = text;
 
-    const match = elements.find(el => el.atomic_number === quiz.answer);
+    const { set: answers, match } = acceptableAnswers(quiz, elements);
 
-    // А теперь показываем форму и ставим фокус в поле
     form.hidden = false;
-    input.value = '';
     input.focus();
 
-    // Обработчик ответа
-    form.onsubmit = (e) => {
+        form.onsubmit = (e) => {
       e.preventDefault();
-      const val = input.value;
-      let correct = false;
-      let resultText = '';
+      const idx = parseInt(input.value, 10);
+      const valid = Number.isInteger(idx) && idx >= 1 && idx <= quiz.choices.length;
+      const correct = valid && choiceMatches(quiz.choices[idx - 1], answers);
 
-      if (match) {
-        const guess = parseInt(val, 10);
-        correct = guess === quiz.answer;
-        resultText = correct
-          ? `\n\n✅ Победил! Это ${match.name} (${match.symbol}, ${match.atomic_number})`
-          : `\n\n❌ Неверно. Правильный ответ: ${quiz.answer}`;
-      } else {
-        correct = val === quiz.answer;
-        resultText = correct
-          ? '\n\n✅ Победил!'
-          : `\n\n❌ Неверно. Правильный ответ: ${quiz.answer}`;
+      const label = match
+        ? `${translateElements(match.name)} (${match.symbol}, ${match.atomic_number})`
+        : String(quiz.answer);
+
+      if (!valid) {
+        out.textContent = out.textContent.replace(/\n\n(✅|❌)[\s\S]*$/, '') +
+          `\n\n⚠️ Введи номер от 1 до ${quiz.choices.length}.`;
+        return;
       }
 
-      out.textContent += resultText;
-      form.hidden = true;
-    };
+      out.textContent += correct
+        ? `\n\n✅ Победил! Ответ ${idx} — это ${label}`
+        : `\n\n❌ Неверно. Ты выбрал ${idx}. Правильный ответ: ${label}`;
 
+      form.hidden = true;
+      next.hidden = false;
+    };
   } catch (e) {
     out.textContent = 'Ошибка: ' + e.message;
   }
-};
+}
+
+$('#btn-quiz').onclick = () => { show('quiz'); loadQuiz(); };
+$('#quiz-next').onclick = () => loadQuiz();
+
 
 $('#btn-daily').onclick = async () => {
   show('daily');
   const out = $('#daily-out');
-  out.textContent = 'Попытка вывести элемент...';
+  out.textContent = 'Загружаю данные...';
   try {
-    const el = await getJSON('/daily');
-    out.textContent = `${el.name} (${el.symbol}) — №${el.atomic_number}\nДень текущего элемента: ${el.date}`;
+    const dailyInfo = await getJSON('/daily');
+    const el = await getJSON('/element/' + dailyInfo.atomic_number);
+
+    // Правильные ключи, которые мы нашли в сыром JSON
+    const mass = el.atomic_mass || 'н/д';
+    const category = el.category || 'н/д';
+    const state = el.state_at_room_temp || 'н/д';
+    const year = el.discovery_year || 'н/д';
+    const density = el.density ? el.density + ' г/см³' : 'н/д';
+    const melting = el.melting_point ? el.melting_point + ' K' : 'н/д';
+    const boiling = el.boiling_point ? el.boiling_point + ' K' : 'н/д';
+    const config = el.electron_configuration_semantic || 'н/д';
+
+    out.textContent =
+      `${el.name} (${el.symbol}) — №${el.atomic_number}\n` +
+      `────────────────────────────\n` +
+      `Атомная масса:   ${mass}\n` +
+      `Категория:       ${category}\n` +
+      `Фаза (20°C):     ${state}\n` +
+      `Плотность:       ${density}\n` +
+      `Т. плавления:    ${melting}\n` +
+      `Т. кипения:      ${boiling}\n` +
+      `Конфигурация:    ${config}\n` +
+      `Год открытия:    ${year}\n\n` +
+      `День текущего элемента: ${dailyInfo.date}`;
+
   } catch (e) {
     out.textContent = 'Ошибка: ' + e.message;
   }
@@ -210,7 +401,35 @@ $('#finder-form').onsubmit = async (e) => {
   out.textContent = 'Ищу...';
   try {
     const el = await getJSON('/element/' + n);
-    out.textContent = JSON.stringify(el, null, 2);
+
+    // Переводим имя и категорию
+    const nameRU = translateElements(el.name);
+    const categoryRU = translateText(el.category) || 'н/д';
+
+    // Переводим физическое состояние (API часто отдает с маленькой буквы)
+    const stateMap = { "solid": "Твёрдое", "liquid": "Жидкое", "gas": "Газообразное" };
+    const rawState = el.state_at_room_temp ? String(el.state_at_room_temp).toLowerCase() : '';
+    const state = stateMap[rawState] || el.state_at_room_temp || 'н/д';
+
+    const mass = el.atomic_mass || 'н/д';
+    const year = el.discovery_year || 'н/д';
+    const density = el.density ? el.density + ' г/см³' : 'н/д';
+    const melting = el.melting_point ? el.melting_point + ' K' : 'н/д';
+    const boiling = el.boiling_point ? el.boiling_point + ' K' : 'н/д';
+    const config = el.electron_configuration_semantic || 'н/д';
+
+    out.textContent =
+      `${nameRU} (${el.symbol}) — №${el.atomic_number}\n` +
+      `────────────────────────────\n` +
+      `Атомная масса:   ${mass}\n` +
+      `Категория:       ${categoryRU}\n` +
+      `Фаза (20°C):     ${state}\n` +
+      `Плотность:       ${density}\n` +
+      `Т. плавления:    ${melting}\n` +
+      `Т. кипения:      ${boiling}\n` +
+      `Конфигурация:    ${config}\n` +
+      `Год открытия:    ${year}`;
+
   } catch {
     out.textContent = 'Не найдено — попробуйте другой номер.';
   }
