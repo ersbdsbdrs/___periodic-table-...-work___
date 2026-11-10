@@ -27,7 +27,7 @@
     align-items: flex-start;
     justify-content: center;
     width: 100%;
-    max-width: 1050px; /* Made wider to fit the sidebar */
+    max-width: 1050px;
     position: relative;
     z-index: 10;
   }
