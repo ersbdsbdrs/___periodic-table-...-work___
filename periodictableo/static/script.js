@@ -253,7 +253,7 @@ async function loadQuiz() {
   const scoreText = $('#score-text');
 
   if (timerId) clearInterval(timerId);
-  scoreText.textContent = `🏆 Рекорд: ${highScore}`;
+  scoreText.textContent = `Рекорд: ${highScore}`;
   form.hidden = true; next.hidden = true; input.value = '';
   out.textContent = 'Начинаю квест...';
 
@@ -284,7 +284,7 @@ async function loadQuiz() {
         playSound('wrong');
         streak = 0;
         form.hidden = true; next.hidden = false;
-        out.textContent = out.textContent.replace(/\n\n(✅|❌|⏰)[\s\S]*$/, '') + `\n\n⏰ Время вышло! Правильный ответ: ${label}\n💀 Стрик сброшен.`;
+        out.textContent = out.textContent.replace(/\n\n(✅|❌|⏰)[\s\S]*$/, '') + `\n\n⏰ Время вышло! Правильный ответ: ${label}\nСтрик сброшен.`;
       }
     }, 1000);
 
@@ -298,7 +298,7 @@ async function loadQuiz() {
       const correct = valid && choiceMatches(quiz.choices[idx - 1], answers);
 
       if (!valid) {
-        out.textContent = out.textContent.replace(/\n\n(✅|❌|⏰)[\s\S]*$/, '') + `\n\n⚠️ Введи номер от 1 до ${quiz.choices.length}.`;
+        out.textContent = out.textContent.replace(/\n\n(✅|❌|⏰)[\s\S]*$/, '') + `\n\nВведи номер от 1 до ${quiz.choices.length}.`;
         return;
       }
 
@@ -308,9 +308,9 @@ async function loadQuiz() {
         if (streak > highScore) {
           highScore = streak;
           localStorage.setItem('chemHighScore', highScore);
-          scoreText.textContent = `🏆 Рекорд: ${highScore}`;
+          scoreText.textContent = `Рекорд: ${highScore}`;
         }
-        out.textContent += `\n\n✅ Победил! Ответ ${idx} — это ${label}\n🔥 Твой стрик: ${streak}`;
+        out.textContent += `\n\n✅ Победил! Ответ ${idx} — это ${label}\nТвой стрик: ${streak}`;
       } else {
         playSound('wrong');
         streak = 0;
@@ -332,7 +332,6 @@ $('#btn-daily').onclick = async () => {
     const dailyInfo = await getJSON('/daily');
     const el = await getJSON('/element/' + dailyInfo.atomic_number);
     out.textContent = renderElementDossier(el) + `\n\n📅 День элемента: ${dailyInfo.date}`;
-    // Сохраняем дату отдельно, чтобы при переключении описания она не терялась
     currentElement._dailyDate = dailyInfo.date;
   } catch (e) { out.textContent = 'Ошибка: ' + e.message; }
 };
